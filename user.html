@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="user.css">
+    <link rel="icon" href="LOGO1.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <title>Admin - User Management</title>
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding-top: 60px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .modal-content button {
+            margin-top: 10px;
+            padding: 10px;
+        }
+
+        .modal-content button:hover {
+            background-color: #ddd;
+        }
+
+        /* Delete Icon */
+        .delete-icon {
+            cursor: pointer;
+            color: red;
+            font-size: 20px;
+        }
+
+        .delete-icon:hover {
+            color: darkred;
+        }
+
+        /* Success Message Styles */
+        .success-message {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            border-radius: 5px;
+        }
+
+        table th {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background-color: #343a40;
+            transition: left 0.3s ease;
+            z-index: 20; /* Higher than the admin box */
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Sidebar Open State */
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar h2 {
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .sidebar ul {
+            padding: 0;
+            list-style: none;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            padding: 15px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .sidebar ul li:hover {
+            background-color: #82A762;;
+        }
+
+        /* Burger Icon */
+        #toggleSidebar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            font-size: 30px;
+            color: white;
+            z-index: 20;
+        }
+
+        #toggleSidebar .burger-icon {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 18px;
+            width: 30px;
+        }
+
+        #toggleSidebar .burger-icon span {
+            height: 4px;
+            background-color: white;
+        }
+
+      /* Admin Box */
+        .admin {
+            position: relative; /* Keeps it static */
+            padding: 20px;
+            z-index: 10; /* Lower than the sidebar */
+            background-color: #f9f9f9;
+            margin: 0; /* No dynamic margin for sidebar interaction */
+            transition: transform 0.3s ease; /* Smooth transition for future enhancements */
+        }
+    </style>
+</head>
+
+<body>
+    <section class="admin">
+        <nav>
+            <img class="icon" src="LOGO1.png" alt="Logo">
+            <label class="logo">Corn Registry System</label>
+        </nav>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <h2>Admin Dashboard</h2>
+            <ul id="menuList">
+                <li id="farmersMenu">Farmers</li>
+                <li id="distribution-records" onclick="window.location.href='add-distribution.html'">Distribution Records</li>
+                <li id="farmersActivitiesMenu" onclick="window.location.href='summaryChart.html'">Farmers Activities</li>
+                <li id="userManagementMenu" onclick="window.location.href='user.html'">User Management</li>
+                <li id="logoutMenu" onclick="window.location.href='index.html'">Logout</li>
+            </ul>
+        </div>
+
+        <!-- Toggle Button (Burger Icon) -->
+        <button id="toggleSidebar">
+            <div class="burger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </button>
+
+        <div class="admin-box">
+            <h1>User Management</h1>
+            <input type="text" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()" />
+
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onclick="selectAllUsers()" /></th>
+                        <th><button onclick="sortTable('name')">Name</button></th>
+                        <th><button onclick="sortTable('rsbaNumber')">RSBA Number</button></th>
+                        <th><button onclick="sortTable('farmLocation')">Farm Location</button></th>
+                        <th><button onclick="sortTable('farmSize')">Farm Size</button></th>
+                        <th><button onclick="sortTable('barangay')">Barangay</button></th>
+                        <th><button onclick="sortTable('contactNumber')">Contact Number</button></th>
+                        <th><button onclick="sortTable('status')">Status</button></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be dynamically inserted here -->
+                </tbody>
+            </table>
+
+            <button onclick="approveSelected()">Approve</button>
+            <button onclick="denySelected()">Deny</button>
+        </div>
+    </section>
+
+    <!-- Modal for Denial Confirmation -->
+    <div id="denyModal" class="modal">
+        <div class="modal-content">
+            <h2>Are you sure you want to deny this user?</h2>
+            <button id="confirmDenyBtn" onclick="denyConfirmed()">Deny</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let userIdToDeny = null;
+
+        function renderTable(usersToRender = users) {
+            const tableBody = document.querySelector('#userTable tbody');
+            tableBody.innerHTML = ''; // Clear existing table content
+
+            usersToRender.sort((a, b) => {
+                if (a.status === 'Pending' && b.status !== 'Pending') {
+                    return -1;
+                } else if (a.status !== 'Pending' && b.status === 'Pending') {
+                    return 1;
+                }
+                return 0;
+            });
+
+            usersToRender.forEach(user => {
+                const farmLocation = user.farmLocation || '';
+                const contactNumber = user.contactNumber || '';
+                const barangay = user.barangay || '';
+                const farmSize = user.farmSize ? `${user.farmSize} hectares` : '';
+                const status = user.status || 'Pending';
+                const firstName = user.firstName || 'N/A';
+                const lastName = user.lastName || 'N/A';
+                const homeAddress = user.homeAddress || 'N/A';
+
+                const row = document.createElement('tr');
+                if (status === 'Pending') {
+                    row.style.backgroundColor = '#A7DCA5';
+                }
+
+                const checkbox =
+                    status === 'Approved' ? '' : `<input type="checkbox" class="userCheckbox" data-id="${user.id}" />`;
+
+                const actionButtons =
+                    status === 'Approved'
+                        ? ''
+                        : `
+                            <button onclick="approveUser(${user.id})">Approve</button>
+                            <button onclick="confirmDenyUser(${user.id})">Deny</button>
+                        `;
+
+                row.innerHTML = `
+                    <td>${checkbox}</td>
+                    <td>${firstName} ${lastName}</td>
+                    <td>${user.rsbaNumber}</td>
+                    <td>${farmLocation}</td>
+                    <td>${farmSize}</td>
+                    <td>${barangay} <br> ${homeAddress}</td>
+                    <td>${contactNumber}</td>
+                    <td>${status}</td>
+                    <td>${actionButtons}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        const toggleButton = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const adminContent = document.querySelector('.admin');
+
+        toggleButton.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            adminContent.classList.toggle('full-width');
+        });
+
+        function approveUser(userId) {
+            const user = users.find(u => u.id === userId);
+            user.status = 'Approved';
+            localStorage.setItem('users', JSON.stringify(users));
+            renderTable();
+        }
+
+        function confirmDenyUser(userId) {
+            userIdToDeny = userId;
+            document.getElementById('denyModal').classList.add('show');
+        }
+
+        function denyConfirmed() {
+            if (userIdToDeny !== null) {
+                const userIndex = users.findIndex(u => u.id === userIdToDeny);
+                if (userIndex !== -1) {
+                    users.splice(userIndex, 1);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    renderTable();
+                }
+            }
+            closeModal();
+        }
+
+        function closeModal() {
+            document.getElementById('denyModal').classList.remove('show');
+        }
+
+        renderTable();
+    </script>
+</body>
+
+</html>

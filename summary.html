@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distribution Records</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        /* Navbar styles */
+        .navbar {
+            background-color: #151718;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar .back-btn {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .navbar .back-btn i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        /* Container for table and chart */
+        .content-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px;
+            gap: 20px;
+        }
+
+        /* Table styling */
+        table {
+            width: 48%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        /* Filter container */
+        .filter-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-left: 20px;
+            width: 100%;
+        }
+
+        .filter-container label {
+            margin-right: 10px;
+        }
+
+        .filter-container input, .filter-container select {
+            margin-right: 15px;
+        }
+
+        .filter-container button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .filter-container button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Chart container */
+        .chart-container {
+            width: 48%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <a href="admin.html" class="back-btn">
+            <i class="arrow-icon">&#8592;</i> Back to Dashboards
+        </a>
+    </div>
+
+    <h1 style="text-align: center; margin-top: 20px;">Distribution Records</h1>
+
+    <!-- Filter Section -->
+    <div class="filter-container">
+        <label for="filterDate">Filter by Date:</label>
+        <input type="date" id="filterDate" />
+
+        <label for="filterName">Filter by Name:</label>
+        <input type="text" id="filterName" placeholder="Enter Name" />
+
+        <label for="filterRSBA">Filter by RSBA Number:</label>
+        <input type="text" id="filterRSBA" placeholder="Enter RSBA Number" />
+
+        <button id="applyFilter">Apply Filter</button>
+    </div>
+
+    <!-- Content Section: Table and Chart -->
+    <div class="content-container">
+        <!-- Table for distribution records -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Batch Name</th>
+                    <th>Batch ID</th>
+                    <th>Distributed Quantity</th>
+                    <th>Distributed To</th>
+                    <th>Date Distributed</th>
+                </tr>
+            </thead>
+            <tbody id="distributionRecordsTableBody">
+                <!-- Records will be dynamically loaded here -->
+            </tbody>
+        </table>
+
+        <!-- Pie Chart Summary -->
+        <div class="chart-container">
+            <h3>Distribution Summary</h3>
+            <canvas id="distributionChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableBody = document.getElementById('distributionRecordsTableBody');
+            const filterDate = document.getElementById('filterDate');
+            const filterName = document.getElementById('filterName');
+            const filterRSBA = document.getElementById('filterRSBA');
+            const applyFilterButton = document.getElementById('applyFilter');
+            const distributionChartCanvas = document.getElementById('distributionChart');
+
+            // Fetch distribution batches from localStorage
+            const distributionBatches = JSON.parse(localStorage.getItem('distributionBatches')) || [];
+
+            // Function to filter records
+            function filterRecords() {
+                const dateValue = filterDate.value;
+                const nameValue = filterName.value.trim().toLowerCase();
+                const rsbaValue = filterRSBA.value.trim().toLowerCase();
+
+                // Clear existing table rows
+                tableBody.innerHTML = '';
+
+                // Loop through batches and display filtered distributions
+                distributionBatches.forEach(batch => {
+                    batch.distributions.forEach(distribution => {
+                        const distributionDate = distribution.dateDistributed;
+                        const distributedTo = distribution.distributedTo.toLowerCase();
+                        const rsbaNumber = distribution.rsbaNumber ? distribution.rsbaNumber.toLowerCase() : '';
+
+                        // Check if record matches filter criteria
+                        const matchesDate = dateValue ? distributionDate === dateValue : true;
+                        const matchesName = distributedTo.includes(nameValue);
+                        const matchesRSBA = rsbaNumber.includes(rsbaValue);
+
+                        if (matchesDate && matchesName && matchesRSBA) {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${batch.batchName}</td>
+                                <td>${batch.batchId}</td>
+                                <td>${distribution.distributedQuantity}</td>
+                                <td>${distribution.distributedTo}</td>
+                                <td>${distribution.dateDistributed}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        }
+                    });
+                });
+
+                // Update the pie chart
+                updatePieChart();
+            }
+
+            // Function to update the pie chart with distribution data
+            function updatePieChart() {
+                // Calculate total distributed quantity for each batch
+                let batchDistributionTotals = {};
+                distributionBatches.forEach(batch => {
+                    batch.distributions.forEach(distribution => {
+                        if (!batchDistributionTotals[batch.batchName]) {
+                            batchDistributionTotals[batch.batchName] = 0;
+                        }
+                        batchDistributionTotals[batch.batchName] += distribution.distributedQuantity;
+                    });
+                });
+
+                // Prepare data for pie chart
+                const labels = Object.keys(batchDistributionTotals);
+                const data = Object.values(batchDistributionTotals);
+
+                // Create the pie chart
+                new Chart(distributionChartCanvas, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#FF9F40'],
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        return tooltipItem.label + ': ' + tooltipItem.raw + ' units';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Apply filter when the button is clicked
+            applyFilterButton.addEventListener('click', filterRecords);
+
+            // Initial load of records and chart
+            filterRecords();
+        });
+    </script>
+
+</body>
+</html>
